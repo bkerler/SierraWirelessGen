@@ -1,0 +1,29 @@
+<UI version="4.0" >
+ <class>SierraCalcClass</class>
+ <widget class="QMainWindow" name="SierraCalcClass" >
+  <property name="objectName" >
+   <string notr="true">SierraCalcClass</string>
+  </property>
+  <property name="geometry" >
+   <rect>
+	<x>0</x>
+	<y>0</y>
+	<width>600</width>
+	<height>400</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>SierraCalc</string>
+  </property>
+  <widget class="QMenuBar" name="menuBar" />
+  <widget class="QToolBar" name="mainToolBar" />
+  <widget class="QWidget" name="centralWidget" />
+  <widget class="QStatusBar" name="statusBar" />
+ </widget>
+ <layoutDefault spacing="6" margin="11" />
+ <pixmapfunction></pixmapfunction>
+ <resources>
+   <include location="sierracalc.qrc"/>
+ </resources>
+ <connections/>
+</UI>

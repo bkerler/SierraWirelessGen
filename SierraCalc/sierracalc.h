@@ -1,20 +1,18 @@
 #ifndef SIERRACALC_H
 #define SIERRACALC_H
 
-#include <QtWidgets/QMainWindow>
+#include <QMainWindow>
 #include "ui_sierracalc.h"
 
-class SierraCalc : public QMainWindow
+class SierraCalc : public QMainWindow, private Ui::SierraCalc
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	SierraCalc(QWidget *parent = 0);
-	~SierraCalc();
-
-private:
-	Ui::SierraCalcClass ui;
-	bool SierraCalc::GetChallenge(QString& challenge, int& mode, int& key);
+    explicit SierraCalc(QWidget *parent = 0);
+    ~SierraCalc();
+private slots:
+    void on_calcbutton_clicked();
 };
 
 #endif // SIERRACALC_H

@@ -5,6 +5,7 @@ SierraCalc::SierraCalc(QWidget *parent) :
 
 {
     setupUi(this);
+    this->setWindowTitle(QApplication::applicationName()+" V1.2 (c) B.Kerler 2018");
     comboBox->addItem("MC8765V",0);
     comboBox->addItem("MC8765 MEP",0x20);
     comboBox->addItem("MC8765",0);
@@ -40,15 +41,13 @@ SierraCalc::~SierraCalc()
 
 }
 
-unsigned char tbl[0x105]={0};
+static unsigned char tbl[0x105]={0};
 
 unsigned int SierraCalc1(unsigned int counter, unsigned char* prodkey, unsigned int intval, unsigned char& challengelen, unsigned int& mcount)
 {
   unsigned int i;
   unsigned int tmp2;
-
-  int tmp1;
-  int tmp3;
+  unsigned int tmp3;
 
   if ( counter )
   {
@@ -56,8 +55,8 @@ unsigned int SierraCalc1(unsigned int counter, unsigned char* prodkey, unsigned 
     for ( i = 1; i < counter; i = 2 * i + 1 );
     do
     {
-      tmp1 = mcount++;
-      challengelen = (prodkey[tmp1] + tbl[challengelen+5])&0xFF;
+      challengelen = (prodkey[mcount] + tbl[challengelen+5])&0xFF;
+      mcount++;
       if ( mcount >= intval )
       {
         mcount = 0;
@@ -65,12 +64,49 @@ unsigned int SierraCalc1(unsigned int counter, unsigned char* prodkey, unsigned 
       }
       tmp3 = (challengelen & i)&0xFF;
       tmp2++;
-      if ( tmp2 > 0xB )
+      if ( tmp2 >= 0xB )
         //div(counter, tmp3); // Careful, that was in arm firmware
             tmp3 %= counter; //In new algo ...weird, results are the same
     }
-    while ( (unsigned int)tmp3 > (unsigned int)counter );
-    counter = (unsigned char)tmp3;
+    while ( tmp3 > counter );
+    counter = tmp3;
+  }
+  return counter;
+}
+
+unsigned int SierraCalc5(unsigned int counter, unsigned char* prodkey, unsigned int intval, unsigned char& challengelen, unsigned int& mcount)
+{
+  unsigned int i;
+  unsigned int tmp2;
+
+  unsigned int tmp3;
+
+  if ( counter )
+  {
+    tmp2 = 0;
+    i = 1;
+    if (counter>1)
+    {
+        for ( i = 1; i < counter; i = (2 * i) + 1 );
+    }
+    
+    do
+    {
+      challengelen = (prodkey[mcount] + tbl[challengelen+8])&0xFF;
+      mcount++;
+      if ( mcount >= intval )
+      {
+        mcount = 0;
+        challengelen += intval&0xFF;
+      }
+      tmp2++;
+      tmp3 = (challengelen & i)&0xFF;
+      if ( tmp2 >= 0xB )
+        //div(counter, tmp3); // Careful, that was in arm firmware
+            tmp3 %= counter; //In new algo ...weird, results are the same
+    }
+    while ( tmp3 > counter );
+    counter = tmp3;
   }
   return counter;
 }
@@ -82,10 +118,10 @@ int SierraCalcV2(unsigned char challenge)
   int v3; // r4@1
   int v4; // r2@1
   int v5; // r5@1
-  int v6; // r3@1
+  unsigned char v6; // r3@1
   int v7; // r6@1
   int v8; // r0@1
-  int result; // r0@1
+  unsigned char result; // r0@1
 
   v2 = tbl[0];
   v3 = (tbl[0]+1) & 0xFF;
@@ -112,31 +148,31 @@ int SierraCalcV2(unsigned char challenge)
 
 int SierraCalcV3(unsigned char challenge)
 {
-    int v2; // r0@1
+  int v2; // r0@1
   int v3; // r4@1
-  int v4; // r2@1
+  unsigned char v4; // r2@1
   int v5; // r5@1
   int v6; // r3@1
-  int v7; // r6@1
-  int result; // r0@1
+  unsigned char v7; // r6@1
+  unsigned char result; // r0@1
 
-  int v1 = tbl[3];
-  v3 = (unsigned __int8)tbl[2];
-  v4 = tbl[(unsigned __int8)tbl[2]+5];
-  tbl[1] += tbl[(unsigned __int8)tbl[3]+5];
+  unsigned char v1 = tbl[3];
+  v3 = tbl[2];
+  v4 = tbl[tbl[2]+5];
+  tbl[1] += tbl[tbl[3]+5];
   v2 = tbl[1];
-  tbl[(unsigned __int8)tbl[2]+5] = tbl[(unsigned __int8)tbl[1]+5];
+  tbl[tbl[2]+5] = tbl[tbl[1]+5];
   ++v1;
-  v5 = (unsigned __int8)tbl[0];
-  tbl[(unsigned __int8)v2+5] = tbl[(unsigned __int8)tbl[0]+5];
-  v6 = (unsigned __int8)v1;
+  v5 = tbl[0];
+  tbl[v2+5] = tbl[tbl[0]+5];
+  v6 = v1;
   tbl[3] = v1;
-  tbl[v5+5] = tbl[(unsigned __int8)v1+5];
+  tbl[v5+5] = tbl[v1+5];
   v7 = tbl[4];
   tbl[v6+5] = v4;
   v3 = tbl[v3+5];
-  tbl[4] = tbl[(unsigned __int8)v4+5] + v7;
-  result = challenge ^ tbl[(unsigned __int8)(v4 + tbl[(unsigned __int8)v2+5])+5] ^ tbl[(unsigned __int8)tbl[(unsigned __int8)((unsigned char)v3 + tbl[v5+5] + tbl[(unsigned __int8)tbl[4]+5])+5]+5];
+  tbl[4] = tbl[v4+5] + v7;
+  result = challenge ^ tbl[(v4 + tbl[v2+5])+5] ^ tbl[tbl[(v3 + tbl[v5+5] + tbl[tbl[4]+5])+5]+5];
   tbl[2] = result;
   tbl[0] = challenge;
 
@@ -145,61 +181,48 @@ int SierraCalcV3(unsigned char challenge)
 
 int SierraCalcV5(unsigned char challenge)
 {
-    int v2; // r0@1
-  int v3; // r4@1
-  int v4; // r2@1
-  int v5; // r5@1
-  int v6; // r3@1
-  int v7; // r6@1
-  int result; // r0@1
-
-  int v1 = tbl[3];
-  v3 = (unsigned __int8)tbl[2];
-  v4 = tbl[(unsigned __int8)tbl[2]+8];
-  tbl[1] += tbl[(unsigned __int8)tbl[3]+8];
-  v2 = tbl[1];
-  tbl[(unsigned __int8)tbl[2]+8] = tbl[(unsigned __int8)tbl[1]+8];
-  ++v1;
-  v5 = (unsigned __int8)tbl[0];
-  tbl[(unsigned __int8)v2+8] = tbl[(unsigned __int8)tbl[0]+8];
-  v6 = (unsigned __int8)v1;
-  tbl[3] = v1;
-  tbl[v5+8] = tbl[(unsigned __int8)v1+8];
-  v7 = tbl[4];
-  tbl[v6+8] = v4;
-  v3 = tbl[v3+8];
-  tbl[4] = tbl[(unsigned __int8)v4+8] + v7;
-  result = challenge ^ tbl[(unsigned __int8)(v4 + tbl[(unsigned __int8)v2+8])+8] ^ tbl[(unsigned __int8)tbl[(unsigned __int8)((unsigned char)v3 + tbl[v5+5] + tbl[(unsigned __int8)tbl[4]+8])+8]+8];
-  tbl[2] = result;
-  tbl[0] = challenge;
-
-  return result;
+    unsigned char cl = tbl[3];
+    unsigned char dl = tbl[1] + tbl[cl + 8];
+    unsigned char bl = tbl[tbl[2] + 8];
+    tbl[1] = dl;
+    tbl[tbl[2] + 8] = tbl[dl + 8];
+    cl = cl + 1;
+    tbl[dl + 8] = tbl[tbl[0] + 8];
+    tbl[3] = cl;
+    tbl[tbl[0] + 8] = tbl[cl + 8];
+    tbl[cl + 8] = bl;
+    unsigned char cl1 = tbl[4] + tbl[bl + 8];
+    tbl[4] = cl1;
+    unsigned char result = tbl[tbl[(((tbl[cl1 + 8] + tbl[tbl[0] + 8]) + tbl[tbl[2] + 8]) & 0xff)+8]+8] ^ tbl[((tbl[dl + 8] + bl) & 0xff) + 8] ^ challenge;
+    tbl[2] = result;
+    tbl[0] = challenge;
+    return result;
 }
 
 int SierraCalcV4(unsigned char challenge)
 {
-  int r2;
+  unsigned char r2;
   int r5;
-  int r3;
-  int r4;
-  int r6;
+  unsigned char r3;
+  unsigned char r4;
+  unsigned char r6;
 
   r6 = tbl[4]+1;
   r5 = tbl[1];
-  r2 = ((unsigned char) tbl[r6] + (unsigned char) tbl[2])&0xFF;
+  r2 = (tbl[r6] + tbl[2])&0xFF;
   r6 = r6 & 0xFF;
   r3 = tbl[r5];
   tbl[2] = r2;
-  tbl[r5] = (unsigned char) tbl[r2];
+  tbl[r5] = tbl[r2];
   tbl[4] = r6;
   tbl[1] = challenge;
-  tbl[r2] = (unsigned char) tbl[tbl[3]];
-  tbl[tbl[3]] = (unsigned char) tbl[r6];
+  tbl[r2] = tbl[tbl[3]];
+  tbl[tbl[3]] = tbl[r6];
   tbl[r6] = r3;
-  r4 = ((unsigned char) tbl[r3]+(unsigned char) tbl[0]) & 0xFF;
+  r4 = (tbl[r3]+tbl[0]) & 0xFF;
   tbl[0] = r4;
   r2 = (tbl[r4]+tbl[tbl[r4]]+tbl[r4])&0xFF;
-  r2 = ((unsigned char) tbl[tbl[r2]] ^ (challenge^(unsigned char) tbl[(tbl[r2]+r3)&0xFF]))&0xFF;
+  r2 = (tbl[tbl[r2]] ^ (challenge^tbl[(tbl[r2]+r3)&0xFF]))&0xFF;
   tbl[3] = r2;
   return r2;
 }
@@ -212,15 +235,15 @@ int SierraInitV3(unsigned char* prodkey, unsigned int intval, unsigned int& mcou
   {
     for (int i=0;i<0x100;i++)
     {
-      tbl[i+5] = (unsigned char)i;
+      tbl[i+5] = i&0xFF;
     }
     mcount = 0;
     //LOBYTE(challengelen) = 0;
-    challengelen=00;
+    challengelen=0;
 
     for (int i=0xFF;i>=0;i--)
     {
-      unsigned char t= SierraCalc1(i, prodkey, intval, challengelen, mcount);
+      unsigned char t= static_cast<unsigned char>(SierraCalc1(static_cast<unsigned char>(i), prodkey, intval, challengelen, mcount));
       unsigned char m = tbl[i+5];
       tbl[i+5] = tbl[t+5];
       tbl[t+5] = m;
@@ -231,11 +254,11 @@ int SierraInitV3(unsigned char* prodkey, unsigned int intval, unsigned int& mcou
     tbl[3]=(unsigned char)tbl[0xC];
     tbl[4]=(unsigned char)tbl[challengelen+5]; */
 
-    tbl[3]=(unsigned char)tbl[6]; //new algo
-    tbl[1]=(unsigned char)tbl[8];
-    tbl[4]=(unsigned char)tbl[0xA];
-    tbl[0]=(unsigned char)tbl[0xC];
-    tbl[2]=(unsigned char)tbl[challengelen+5];
+    tbl[3]=tbl[6]; //new algo
+    tbl[1]=tbl[8];
+    tbl[4]=tbl[0xA];
+    tbl[0]=tbl[0xC];
+    tbl[2]=tbl[challengelen+5];
 
     mcount = 0;
     result = 1;
@@ -255,7 +278,7 @@ int SierraInitV4(unsigned char* prodkey, unsigned int intval, unsigned int& mcou
   {
     for (int i=0;i<0x100;i++)
     {
-      tbl[i+5] = (unsigned char)i;
+      tbl[i+5] = i&0xFF;
     }
     mcount = 0;
     //LOBYTE(challengelen) = 0;
@@ -263,17 +286,17 @@ int SierraInitV4(unsigned char* prodkey, unsigned int intval, unsigned int& mcou
 
     for (int i=0xFF;i>=0;i--)
     {
-      unsigned char t= SierraCalc1(i, prodkey, intval, challengelen, mcount);
+      unsigned char t= static_cast<unsigned char>(SierraCalc1(static_cast<unsigned char>(i), prodkey, intval, challengelen, mcount));
       unsigned char m = tbl[i+5];
       tbl[i+5] = tbl[t+5];
       tbl[t+5] = m;
     }
 
-    tbl[0]=(unsigned char)tbl[5];
-    tbl[1]=(unsigned char)tbl[challengelen+7];
-    tbl[2]=(unsigned char)tbl[3];
-    tbl[3]=(unsigned char)tbl[7];
-    tbl[4]=(unsigned char)tbl[1];
+    tbl[0]=tbl[5];
+    tbl[1]=tbl[challengelen+7];
+    tbl[2]=tbl[3];
+    tbl[3]=tbl[7];
+    tbl[4]=tbl[1];
 
     mcount = 0;
     result = 1;
@@ -293,7 +316,7 @@ int SierraInitV5(unsigned char* prodkey, unsigned int intval, unsigned int& mcou
   {
     for (int i=0;i<0x100;i++)
     {
-      tbl[i+5] = (unsigned char)i;
+      tbl[i+8] = i&0xFF;
     }
     mcount = 0;
     //LOBYTE(challengelen) = 0;
@@ -301,17 +324,17 @@ int SierraInitV5(unsigned char* prodkey, unsigned int intval, unsigned int& mcou
 
     for (int i=0xFF;i>=0;i--)
     {
-      unsigned char t= SierraCalc1(i, prodkey, intval, challengelen, mcount);
-      unsigned char m = tbl[i+5];
-      tbl[i+5] = tbl[t+5];
-      tbl[t+5] = m;
+      unsigned char t= static_cast<unsigned char>(SierraCalc5(static_cast<unsigned char>(i), prodkey, intval, challengelen, mcount));
+      unsigned char m = tbl[i+8];
+      tbl[i+8] = tbl[t+8];
+      tbl[t+8] = m;
     }
 
-    tbl[0]=(unsigned char)tbl[0xF];
-    tbl[1]=(unsigned char)tbl[0xB];
-    tbl[2]=(unsigned char)tbl[challengelen];
-    tbl[3]=(unsigned char)tbl[9];
-    tbl[4]=(unsigned char)tbl[0xD];
+    tbl[0]=tbl[0xF];
+    tbl[1]=tbl[0xB];
+    tbl[2]=tbl[challengelen+8];
+    tbl[3]=tbl[9];
+    tbl[4]=tbl[0xD];
 
     mcount = 0;
     result = 1;
@@ -332,25 +355,25 @@ int SierraInitV2(unsigned char* prodkey, unsigned int intval, unsigned int& mcou
   {
     for (int i=0;i<0x100;i++)
     {
-      tbl[i+5] = (unsigned char)i;
+      tbl[i+5] = i&0xFF;
     }
     mcount = 0;
     //LOBYTE(challengelen) = 0;
-    challengelen=00;
+    challengelen=0;
 
     for (int i=0xFF;i>=0;i--)
     {
-      unsigned char t= SierraCalc1(i, prodkey, intval, challengelen, mcount);
+      unsigned char t= static_cast<unsigned char>(SierraCalc1(static_cast<unsigned int>(i), prodkey, intval, challengelen, mcount));
       unsigned char m = tbl[i+5];
       tbl[i+5] = tbl[t+5];
       tbl[t+5] = m;
     }
 
-    tbl[0]=(unsigned char)tbl[6]; //old algo
-    tbl[1]=(unsigned char)tbl[8];
-    tbl[2]=(unsigned char)tbl[0xA];
-    tbl[3]=(unsigned char)tbl[0xC];
-    tbl[4]=(unsigned char)tbl[challengelen+5];
+    tbl[0]=tbl[6]; //old algo
+    tbl[1]=tbl[8];
+    tbl[2]=tbl[0xA];
+    tbl[3]=tbl[0xC];
+    tbl[4]=tbl[challengelen+5];
 
     mcount = 0;
     result = 1;
@@ -380,21 +403,21 @@ unsigned char *SierraFinish()
 
 unsigned char* SierraKeygen(unsigned char* challenge, /*unsigned char* resultbuffer,*/ unsigned char* prodtable, unsigned char challengelen, unsigned int mcount, int mode)
 {
-  int result;
-  if (mode==2)  result = SierraInitV2(prodtable, (unsigned char)mcount, mcount, challengelen);
-  else if (mode==3) result = SierraInitV3(prodtable, (unsigned char)mcount, mcount, challengelen);
-  else if (mode==4) result = SierraInitV4(prodtable, (unsigned char)mcount, mcount, challengelen);
-  else if (mode==5) result = SierraInitV5(prodtable, (unsigned char)mcount, mcount, challengelen);
+  int result=0;
+  if (mode==2)  result = SierraInitV2(prodtable, mcount, mcount, challengelen);
+  else if (mode==3) result = SierraInitV3(prodtable, mcount, mcount, challengelen);
+  else if (mode==4) result = SierraInitV4(prodtable, mcount, mcount, challengelen);
+  else if (mode==5) result = SierraInitV5(prodtable, mcount, mcount, challengelen);
 
-  unsigned char* resultbuffer=(unsigned char*)malloc(challengelen);
+  unsigned char* resultbuffer=static_cast<unsigned char*>(malloc(challengelen));
   if ( result )
   {
     for ( int i = 0; i < challengelen; i++ )
     {
-      if (mode==2) resultbuffer[i] = SierraCalcV2(challenge[i]);
-      else if (mode==3) resultbuffer[i] = SierraCalcV3(challenge[i]);
-      else if (mode==4) resultbuffer[i] = SierraCalcV4(challenge[i]);
-      else if (mode==5) resultbuffer[i] = SierraCalcV5(challenge[i]);
+      if (mode==2) resultbuffer[i] = static_cast<unsigned char>(SierraCalcV2(challenge[i]));
+      else if (mode==3) resultbuffer[i] = static_cast<unsigned char>(SierraCalcV3(challenge[i]));
+      else if (mode==4) resultbuffer[i] = static_cast<unsigned char>(SierraCalcV4(challenge[i]));
+      else if (mode==5) resultbuffer[i] = static_cast<unsigned char>(SierraCalcV5(challenge[i]));
     }
     SierraFinish();
     result = 1;
@@ -416,7 +439,7 @@ void SierraCalc::on_calcbutton_clicked()
 
     unsigned char challengearray[8]={0};
 
-    for (int i=0;i<8;i++) challengearray[i]=(unsigned char)challenge.mid(i*2,2).toInt(0,16);
+    for (int i=0;i<8;i++) challengearray[i]=static_cast<unsigned char>(challenge.mid(i*2,2).toInt(nullptr,16));
 
     unsigned char prodkey[]=
     {

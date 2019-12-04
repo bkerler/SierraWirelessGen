@@ -6,7 +6,24 @@ MIT License
 
 - For enabling development mode and tests
 - For setting band options if locked
-  
+
+## Supported devices
+    "MDM8200": ["M81A", "M81B", "AC880", "AC881", "MC8780", "MC8781", "AC880E", "AC881E", "EM8780", "EM8781",
+                "MC8780V", "MC8781V", "MC8700", "AC308U"],
+    "MDM9200": ["AC710", "MC8775", "MC8775V", "AC875", "MC8700", "AC313U", "MC8801", "MC7700", "MC7750", "MC7710",
+                "EM7700"],
+    "MDM9200_V1": ["AC710", "MC8775", "MC8775V", "AC875", "MC8700", "AC313U", "MC8801", "MC7700", "MC7750",
+                   "MC7710", "EM7700"],
+    "MDM9200_V2": ["AC775", "PC7200"],
+    "MDM9x28": ["SWI9X07Y", "WP76xx"],
+    "MDM9x15": ["SWI9X15C", "AR7550", "AR7552", "AR7554", "EM7355", "EM7655", "MC7354", "WP7100", "WP7102", "WP7104",
+                "MC7305", "EM7305", "MC8805", "EM8805", "MC7350", "MC7350-L", "MC7802", "MC7304", "AR7556", "AR7558",
+                "WP75xx", "WP85xx", "WP8548", "WP8548G", "AC340U"],
+    "MDM9x30": ["EM7455", "MC7455", "EM7430", "MC7430"],
+    "MDM9x40": ["AC815s"],
+    "MDM9x50": ["EM7565", "EM7565-9", "EM7511"],
+    "MDM9x50_V1" : ["Netgear MR1100"]
+    
 ## Installation
 
 - Get python >=3.6 64-Bit

@@ -1,5 +1,5 @@
 # Challenge/Response Generator for Sierra Wireless Cards V1.0
-(c) B. Kerler 2019
+(c) B. Kerler 2019-2020
 MIT License
 
 ## Why
@@ -20,6 +20,7 @@ MIT License
                 "MC7305", "EM7305", "MC8805", "EM8805", "MC7350", "MC7350-L", "MC7802", "MC7304", "AR7556", "AR7558",
                 "WP75xx", "WP85xx", "WP8548", "WP8548G", "AC340U"],
     "MDM9x30": ["EM7455", "MC7455", "EM7430", "MC7430"],
+    "MDM9x30_V1": ["Netgear AC790S/AC791L"],
     "MDM9x40": ["AC815s"],
     "MDM9x50": ["EM7565", "EM7565-9", "EM7511"],
     "MDM9x50_V1" : ["Netgear MR1100"]

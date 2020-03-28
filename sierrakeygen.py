@@ -28,7 +28,7 @@ prodtable = {
     "MDM9x28":    dict(openlock=9, openmep=10, opencnd=9, clen=8, init=[7,3,0,1,5], run="resultbuffer[i]=self.SierraAlgo(challenge[i], 4, 2, 1, 0, 3, 2, 0, 0)"),  # SWI9X07Y_02.25.02.01
     #"MDM9x30":    dict(openlock=0, openmep=1, opencnd=0, clen=8, init=[0,7,5,3,1], run="resultbuffer[i]=self.SierraCalc9x30(challenge[i])"), # MC7455_2.30.01.01 #4
     "MDM9x30":    dict(openlock=5, openmep=4, opencnd=5, clen=8, init=[7,3,0,1,5], run="resultbuffer[i]=self.SierraAlgo(challenge[i], 4, 2, 1, 0, 3, 2, 0, 0)"),  # MC7455_2.30.01.01 #4
-    "MDM9x30_V1":    dict(openlock=18, openmep=16, opencnd=18, clen=8, init=[7,3,0,1,5], run="resultbuffer[i]=self.SierraAlgo(challenge[i], 4, 2, 1, 0, 3, 2, 0, 0)"),  # AC791L/AC790S NTG9X35C_02.08.29.00
+    "MDM9x30_V1":    dict(openlock=17, openmep=15, opencnd=17, clen=8, init=[7,3,0,1,5], run="resultbuffer[i]=self.SierraAlgo(challenge[i], 4, 2, 1, 0, 3, 2, 0, 0)"),  # AC791L/AC790S NTG9X35C_02.08.29.00
 
     #"MDM9x40":    dict(openlock=11, openmep=1, opencnd=11, clen=8, init=[0,7,5,3,1], run="resultbuffer[i]=self.MDM9x40(challenge[i], 2, 0, 3, 1, 4, 1, 0, 0)"),
     "MDM9x40": dict(openlock=11, openmep=12, opencnd=11, clen=8, init=[7,3,0,1,5], run="resultbuffer[i]=self.SierraAlgo(challenge[i], 4, 2, 1, 0, 3, 2, 0, 0)"),  # AC815s
@@ -52,7 +52,7 @@ infotable = {
                 "MC7305", "EM7305", "MC8805", "EM8805", "MC7350", "MC7350-L", "MC7802", "MC7304", "AR7556", "AR7558",
                 "WP75xx", "WP85xx", "WP8548", "WP8548G", "AC340U"],
     "MDM9x30": ["EM7455", "MC7455", "EM7430", "MC7430"],
-    "MDM9x30_V1" : ["Netgear AC790/MDM9230"]
+    "MDM9x30_V1" : ["Netgear AC790/MDM9230"],
     "MDM9x40": ["AC815s"],
     "MDM9x50": ["EM7565", "EM7565-9", "EM7511"],
     "MDM9x50_V1" : ["Netgear MR1100"]

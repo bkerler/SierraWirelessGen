@@ -53,7 +53,7 @@ infotable = {
                 "WP75xx", "WP85xx", "WP8548", "WP8548G", "AC340U"],
     "MDM9x30": ["EM7455", "MC7455", "EM7430", "MC7430"],
     "MDM9x30_V1" : ["Netgear AC790/MDM9230"],
-    "MDM9x40": ["AC815s"],
+    "MDM9x40": ["AC815s", "AC785s"],
     "MDM9x50": ["EM7565", "EM7565-9", "EM7511"],
     "MDM9x50_V1" : ["Netgear MR1100"]
 }

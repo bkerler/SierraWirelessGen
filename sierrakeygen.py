@@ -7,7 +7,11 @@
 import serial
 import sys
 import argparse
+import time
+import serial.tools.list_ports
+from telnetlib import Telnet
 from binascii import hexlify, unhexlify
+
 '''
 C7 = 7 0		0	2	7		5 0
 C6 = 3 1		7	0	3		0 1
@@ -626,21 +630,71 @@ class SierraGenerator():
         return resultbuffer
 
 
-def readreply(ser):
-    info=[]
-    while (True):
-        tmp=ser.readline().decode('utf-8').replace('\r','').replace('\n','')
-        if ("OK" in info):
-            return info
-        elif ("ERROR" in info) or info=="":
-            return -1
-        info.append(tmp)
-    return info
+class connection:
+    def __init__(self,port=""):
+        self.serial=None
+        self.tn=None
+        self.connected=False
+        if port=="":
+            port=self.detect(port)
+            if port=="":
+                self.tn=Telnet("192.168.1.1", 5510)
+                self.connected=True
+        if port!="":
+            self.serial = serial.Serial(port=port, baudrate=115200, bytesize=8, parity='N', stopbits=1, timeout=1)
+            self.connected=self.serial.is_open
 
+
+    def detect(self, port):
+        if port=="":
+            for port in serial.tools.list_ports.comports():
+                if port.vid == 0x1199:
+                    portid = port.location[-1:]
+                    if int(portid) == 3:
+                        print("Detected Sierra Wireless device at: " + port.device)
+                        return port.device
+        return ""
+
+    def readreply(self):
+        info = []
+        if self.serial is not None:
+            while (True):
+                tmp = self.serial.readline().decode('utf-8').replace('\r', '').replace('\n', '')
+                if ("OK" in info):
+                    return info
+                elif ("ERROR" in info) or info == "":
+                    return -1
+                info.append(tmp)
+        return info
+
+    def send(self, cmd):
+        if self.tn!=None:
+            self.tn.write(bytes(cmd+"\r", 'utf-8'))
+            time.sleep(0.05)
+            data=""
+            while True:
+                tmp=self.tn.read_eager()
+                if tmp!=b"":
+                    data+=tmp.strip().decode('utf-8')
+                else:
+                    break
+            return data.split("\r\n")
+        elif self.serial!=None:
+            self.serial.write(bytes(cmd+"\r",'utf-8'))
+            time.sleep(0.05)
+            return self.readreply()
+
+    def close(self):
+        if self.tn!=None:
+            self.tn.close()
+            self.connected = False
+        if self.serial!=None:
+            self.serial.close()
+            self.connected = False
 
 def main(args):
-    version = "1.0"
-    info = 'Sierra Wireless Generator ' + version + ' (c) B. Kerler 2019'
+    version = "1.1"
+    info = 'Sierra Wireless Generator ' + version + ' (c) B. Kerler 2019-2020'
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                      description=info)
 
@@ -710,73 +764,67 @@ def main(args):
     keygen = SierraGenerator()
     port = ""
     if args.unlock:
-        import serial.tools.list_ports
         if args.port != "":
             port = args.port
-        else:
-            for port in serial.tools.list_ports.comports():
-                if port.vid == 0x1199:
-                    portid = port.location[-1:]
-                    if int(portid) == 3:
-                        port = port.device
-                        print("Detected Sierra Wireless device at: " + port)
-                        break
-        if port != "":
-            ser = serial.Serial(port=port, baudrate=115200, bytesize=8, parity='N', stopbits=1, timeout=1)
-            ser.write(b"ATI\r")
-            info = readreply(ser)
+        cn=connection(port)
+        if cn.connected:
+            info=cn.send("ATI")
             if info != -1:
+                revision=""
+                model=""
                 for line in info:
                     if "Revision" in line:
-                        if "SWI9X15" in line:
-                            devicegeneration = "MDM9x15"
-                        elif "SWI9X30" in line:
-                            devicegeneration = "MDM9x30"
-                        elif "SWI9X40" in line:
-                            devicegeneration = "MDM9x40"
-                        elif "SWI9X50" in line:
+                        revision=line.split(":")[1].strip()
+                    if "Model" in line:
+                        model=line.split(":")[1].strip()
+                if revision!="":
+                    if "9X15" in revision:
+                        devicegeneration = "MDM9x15"
+                    elif "9X30" in revision:
+                        devicegeneration = "MDM9x30"
+                    elif "9X40" in revision:
+                        devicegeneration = "MDM9x40"
+                    elif "9X50" in revision:
+                        if "MR1100" in model:
+                            devicegeneration = "MDM9x50_V1"
+                        else:
                             devicegeneration = "MDM9x50"
-                        break
             else:
                 print("Error on getting ATI modem response. Wrong port? Aborting.")
-                ser.close()
+                cn.close()
                 exit(0)
             if devicegeneration == "":
                 print("Unknown device generation. Please send me details :)")
             else:
                 print("Device generation detected: " + devicegeneration)
                 print("Sending AT!ENTERCND=\"A710\" request.")
-                ser.write(b"AT!ENTERCND=\"A710\"\r")
-                info = readreply(ser)
+                info=cn.send("AT!ENTERCND=\"A710\"")
                 if info == -1:
                     print("Uhoh ... invalid entercnd password. Aborting ...")
-                    ser.close()
+                    cn.close()
                     exit(0)
                 print("Sending AT!OPENLOCK? request")
-                ser.write(b"AT!OPENLOCK?\r")
-                info = readreply(ser)
+                info=cn.send("AT!OPENLOCK?")
                 challenge = ""
                 if info != -1:
                     if len(info) > 2:
                         challenge = info[1]
                 else:
                     print("Error on AT!OPENLOCK? request. Aborting.")
-                    ser.close()
+                    cn.close()
                     exit(0)
                 if challenge == "":
                     print("Error: Couldn't get challenge. Aborting.")
-                    ser.close()
+                    cn.close()
                     exit(0)
                 resp = keygen.run(devicegeneration, challenge, 0)
                 print("Sending AT!OPENLOCK=\"" + resp + "\" response.")
-                ser.write(bytes("AT!OPENLOCK=\"" + resp + "\"\r", "utf-8"))
-                info = readreply(ser)
+                info=cn.send("AT!OPENLOCK=\"" + resp + "\"")
                 if info == -1:
                     print("Damn. AT!OPENLOCK failed.")
                 else:
                     print("Success. Device is now engineer unlocked.")
-            ser.close()
-
+            cn.close()
         exit(0)
     else:
         if openlock != "":

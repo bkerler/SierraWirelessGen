@@ -1,4 +1,4 @@
-# Challenge/Response Generator for Sierra Wireless Cards V1.0
+# Challenge/Response Generator for Sierra Wireless Cards V1.2
 (c) B. Kerler 2019-2020
 MIT License
 
@@ -15,15 +15,15 @@ MIT License
     "MDM9200_V1": ["AC710", "MC8775", "MC8775V", "AC875", "MC8700", "AC313U", "MC8801", "MC7700", "MC7750",
                    "MC7710", "EM7700"],
     "MDM9200_V2": ["AC775", "PC7200"],
-    "MDM9x28": ["SWI9X07Y", "WP76xx"],
     "MDM9x15": ["SWI9X15C", "AR7550", "AR7552", "AR7554", "EM7355", "EM7655", "MC7354", "WP7100", "WP7102", "WP7104",
                 "MC7305", "EM7305", "MC8805", "EM8805", "MC7350", "MC7350-L", "MC7802", "MC7304", "AR7556", "AR7558",
                 "WP75xx", "WP85xx", "WP8548", "WP8548G", "AC340U"],
     "MDM9x30": ["EM7455", "MC7455", "EM7430", "MC7430"],
     "MDM9x30_V1": ["Netgear AC790S/AC791L"],
-    "MDM9x40": ["AC815s", "AC785s"],
+    "MDM9x40": ["AC815s", "AC785s","Netgear MR1100"],
     "MDM9x50": ["EM7565", "EM7565-9", "EM7511"],
-    "MDM9x50_V1" : ["Netgear MR1100"]
+    "MDM9x06": ["WP77xx"],
+    "MDM9x07": ["SWI9X07Y", "WP76xx"]
     
 ## Installation
 
@@ -37,29 +37,7 @@ MIT License
 
 ## Usage
 
-- Open up a terminal and enable enhanced commands (generic pwd is "A710")
-    
-    ```
-    AT!ENTERCND=A710
-    ```
-    
-    Other known pwds are (thx to 4PDA):
-    
-    ```
-    AC815s: "fallow"
-    MR1100: “lindeman”
-    AC790-Telstra: "sunflower"
-    LB1111: "granville"
-    AC810-100EUS: "whistler"
-    AC810S-1P1PLS: "seymour"
-    AC810S-1TLAUS: "grouse"
-    AC810S-1RDQAS: "cypress"
-    AC790-100EUS: "lavender"
-    AC790S-1SPSUS : "bluebell"
-    ```
-
 - Get a specific challenge for your task from the modem
-    
     ```
     AT!OPENLOCK?
     ```
@@ -76,10 +54,14 @@ MIT License
     AT!OPENCND?
     ```
 
-- Run generator (here challenge is BE96CBBEE0829BCA and device generation is MDM9200):
+- Run generator:
+    For automatic unlock, use -u:
+    ```bash
+    ~> ./sierrakeygen.py -u
+    ```
 
     For AT!OPENLOCK use -l, for AT!OPENMEP use -m and for AT!OPENCND use -c accordingly
-    
+    (here challenge is BE96CBBEE0829BCA and device generation is MDM9200)
     ```bash
     ~> ./sierrakeygen.py -l BE96CBBEE0829BCA -d MDM9200
     ```
@@ -102,6 +84,30 @@ MIT License
     AT!OPENCND=[response from generator]
     ```
 
+- Open up a terminal and enable enhanced commands (generic pwd is "A710")
+    
+    ```
+    AT!ENTERCND=A710
+    ```
+    
+    Other known pwds are (thx to 4PDA):
+    
+    ```
+    AC815s: "fallow"
+    MR1100: “lindeman”
+    AC790-Telstra: "sunflower"
+    LB1111: "granville"
+    AC810-100EUS: "whistler"
+    AC810S-1P1PLS: "seymour"
+    AC810S-1TLAUS: "grouse"
+    AC810S-1RDQAS: "cypress"
+    AC790-100EUS: "lavender"
+    AC790S-1SPSUS : "bluebell"
+    ```
+    
+    After unlocking via AT!OPENLOCK, you can also set a new password via AT!SETCND="pwd",
+    in case the password isn't known
+  
 ## Help
 
     ```bash
@@ -112,7 +118,7 @@ MIT License
 
 - MDM9200/MDM9x15/MDM9x30/MDM9x40/MDM9x50 confirmed to work
 
-- For AC785/AC790/AC810, you can access the serial port via tcp:
+- For AC785/AC790/AC810/MR1100, you can access the serial port via tcp:
 
     ```bash
     HostName: 192.168.1.1
@@ -316,6 +322,15 @@ MIT License
     adb connect 192.168.1.1
     ```
   
+ - Enable telnet (after sending valid openlock request, here: MR1100)
+
+    ```
+    AT!TELEN=1
+    AT!CUSTOM="RDENABLE", 1
+    AT!CUSTOM="TELNETENABLE", 1
+    ```
+    then reboot the device. Afterwards, telnet should be available on MR1100 via 192.168.1.1:23
+
  - Flash firmware :
 
     ```bash
